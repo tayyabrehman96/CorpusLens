@@ -7,6 +7,7 @@ from rank_bm25 import BM25Okapi
 
 from app.config import Settings
 from app.database import all_chunks_for_retrieval, all_figure_index_rows, get_conn
+from app.retrieve.rerank import rerank_text_hits
 from app.retrieve.vector_store import VectorStore
 
 
@@ -76,10 +77,18 @@ class HybridRetriever:
 
         k_text = top_k_text or self.settings.retrieve_k_text
         k_fig = top_k_figures or self.settings.retrieve_k_figures
+        k_pool = k_text
+        if self.settings.rerank_enabled and chunk_by_id:
+            k_pool = min(
+                len(chunk_by_id),
+                max(k_text, k_text * max(2, self.settings.rerank_pool_multiplier)),
+            )
+        # Chroma query must request at least one result when the collection is non-empty.
+        k_vec = max(1, k_pool)
 
         vec_res = self.store.query_text(
             query,
-            n_results=k_text,
+            n_results=k_vec,
             document_ids=document_ids,
         )
         vec_ids: list[str] = []
@@ -91,7 +100,7 @@ class HybridRetriever:
                 vec_dist[cid] = float(d)
 
         fused = reciprocal_rank_fusion([bm25_ranked, vec_ids], k=self.settings.rrf_k)
-        top_chunk_ids = [fid for fid, _ in fused[: k_text * 4]]
+        top_chunk_ids = [fid for fid, _ in fused[: k_pool * 4]]
 
         # Keep fusion order; drop stale Chroma/SQLite mismatches; backfill from DB if fusion was empty
         # or every ranked id was missing from SQLite (common after deleting Chroma but keeping SQLite).
@@ -102,20 +111,20 @@ class HybridRetriever:
                 continue
             seen.add(cid)
             ordered_ids.append(cid)
-            if len(ordered_ids) >= k_text:
+            if len(ordered_ids) >= k_pool:
                 break
-        if len(ordered_ids) < k_text:
+        if len(ordered_ids) < k_pool:
             for cid in ids_order:
                 if cid in seen or cid not in chunk_by_id:
                     continue
                 seen.add(cid)
                 ordered_ids.append(cid)
-                if len(ordered_ids) >= k_text:
+                if len(ordered_ids) >= k_pool:
                     break
 
         text_hits: list[dict[str, Any]] = []
         sims: list[float] = []
-        for cid in ordered_ids[:k_text]:
+        for cid in ordered_ids[:k_pool]:
             c = chunk_by_id[cid]
             dist = vec_dist.get(cid)
             if dist is not None:
@@ -133,6 +142,8 @@ class HybridRetriever:
                     "score": sim,
                 }
             )
+
+        text_hits = rerank_text_hits(query, text_hits, k_text, self.settings)
 
         figure_hits: list[dict[str, Any]] = []
         if include_figures:

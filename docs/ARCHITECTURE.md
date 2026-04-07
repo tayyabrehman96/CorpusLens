@@ -150,7 +150,7 @@ CorpusLens/
 ### 3.5 `services/ingest_service.py`
 
 - **Order**: optional full wipe → copy to `files/` → PDF/image profile JSON → `insert_document` → `_ingest_physical_file`.
-- **PDF**: `ingest_pdf_with_figures` → SQLite chunks + `VectorStore.upsert_text_chunks`; figures → `assets` + `upsert_figures`.
+- **PDF**: `analyze_pdf_profile` → optional **full-page OCR** path for scan-heavy / low-text / empty PDFs (`PDF_OCR_*`); `ingest_pdf_with_figures` → SQLite chunks + `VectorStore.upsert_text_chunks`; figures → `assets` + `upsert_figures`; optional **Ollama vision** captions (`OLLAMA_VISION_MODEL`) merged into figure index text and `description`.
 - **Image**: single “virtual” page chunk + optional OCR text; duplicate as figure asset for thumbnails.
 - **Failure**: on exception or PDF with zero chunks **and** zero assets, **cleanup** (delete vectors, DB row, file, assets dir) and surface error to client.
 - **Reindex**: clears vectors + chunks/assets for doc, re-ingests from stored path, refreshes profile.
@@ -162,13 +162,14 @@ CorpusLens/
 - **Query**: `query_text` / `query_figures` with optional `document_id` filter (`$in` for multiple IDs).
 - **Lifecycle**: `delete_document_vectors`, `reset_all` (drop collections, recreate).
 
-### 3.7 `retrieve/hybrid.py`
+### 3.7 `retrieve/hybrid.py` and `retrieve/rerank.py`
 
 - Loads candidate chunks from SQLite (optionally filtered by `document_ids`).
 - **BM25** (`rank_bm25`) over chunk texts → top `bm25_k` chunk ids.
-- **Dense**: embedding query → Chroma `query_text` → ids + distances.
+- **Dense**: embedding query → Chroma `query_text` → ids + distances (pool widened when `RERANK_ENABLED`).
 - **RRF**: fuse BM25 and vector ranked lists.
 - **Reconciliation**: follow fused order but drop ids missing in SQLite; **backfill** from DB order if fusion yields too few (handles Chroma/SQLite drift).
+- **Reranking**: optional `rerank.py` cross-encoder rescoring of the candidate pool before trimming to `k` (see `RERANK_MODEL`).
 - **Figures**: optional branch (query intent or `fast_mode` off) — Chroma figure query + SQLite figure rows.
 - **Output**: `text_hits`, `figure_hits`, heuristic `retrieval_confidence`.
 
@@ -236,9 +237,11 @@ CorpusLens/
 ## 7. Extension points (for contributors)
 
 - **Ingest**: add parsers (e.g. DOCX) beside `ingest/pdf.py`; wire MIME branch in `ingest_service._ingest_physical_file`.
-- **Retrieval**: adjust fusion weights, add reranker, or extra collections in `hybrid.py` / `vector_store.py`.
+- **Retrieval**: adjust fusion weights in `hybrid.py`; optional **cross-encoder rerank** in `retrieve/rerank.py` (see `RERANK_ENABLED`).
 - **LLM**: new backend by implementing a stream generator and branching in `chat.py`.
 - **UI**: split `Dashboard.tsx` into smaller components; add routes in `app/` if the product grows beyond a single page.
+
+**Roadmap**: advanced AI features (implemented vs planned) are listed in **[ROADMAP.md](./ROADMAP.md)**.
 
 ---
 

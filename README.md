@@ -6,6 +6,8 @@ Repository: **[github.com/tayyabrehman96/CorpusLens](https://github.com/tayyabre
 
 **Architecture (detailed)**: see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — directory map, data flow, modules, Mermaid diagram, and extension points.
 
+**AI roadmap**: see **[docs/ROADMAP.md](docs/ROADMAP.md)** — reranking, scan OCR, optional Ollama vision captions, and future ideas.
+
 ---
 
 ## About
@@ -118,7 +120,7 @@ CorpusLens is a **tool**, not a source of truth. Quality depends on **retrieval*
 | **Disk** | SQLite + Chroma + uploads grow with library size; wipe with **Reset library** or `replace_library` on upload when needed. |
 | **Ollama** | Latency scales with **model size** and hardware; use a smaller tag for speed, larger for quality. |
 
-Optional: install **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** on your `PATH` for richer text from figure crops.
+Install **[Tesseract OCR](https://github.com/tesseract-ocr/tesseract)** on your `PATH` for **figure OCR** and for **full-page OCR** on PDFs classified as scan-heavy or low-text (`PDF_OCR_PAGES_ENABLED`, see `.env.example`).
 
 ---
 
@@ -148,6 +150,9 @@ See **`backend/.env.example`** for the full list. Commonly tuned:
 | `HF_LOCAL_MODEL` | Hugging Face model id for local generation |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` | Ollama endpoint and tag |
 | `EMBEDDING_MODEL` | Default `BAAI/bge-small-en-v1.5` |
+| `RERANK_ENABLED` | `true` to cross-encoder rerank hybrid text hits (extra model download) |
+| `PDF_OCR_*` | Full-page Tesseract OCR for weak PDF text layers |
+| `OLLAMA_VISION_MODEL` | Optional vision tag for **figure captions** at ingest (Ollama must support images) |
 | `CORS_ORIGINS` | Frontend origins (e.g. `http://localhost:3000`) |
 
 Frontend: **`frontend/.env.local.example`** — use `NEXT_PUBLIC_API_URL` if the API base URL changes.

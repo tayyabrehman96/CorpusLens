@@ -35,6 +35,16 @@ class Settings(BaseSettings):
     retrieve_k_figures: int = 4
     bm25_k: int = 20
     rrf_k: int = 60
+    # Cross-encoder reranking after hybrid fusion (downloads ~90MB model on first use).
+    rerank_enabled: bool = False
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_pool_multiplier: int = 4
+    # Full-page Tesseract OCR for PDFs classified scan-heavy / low-text (requires tesseract on PATH).
+    pdf_ocr_pages_enabled: bool = True
+    pdf_ocr_max_pages: int = 80
+    pdf_ocr_dpi_scale: float = 2.0
+    # Optional: Ollama vision model tag for figure captions at ingest (empty = disabled).
+    ollama_vision_model: str = ""
 
 
 @lru_cache

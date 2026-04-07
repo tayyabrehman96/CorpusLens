@@ -124,6 +124,7 @@ def extract_figures(
     document_id: str,
     assets_dir: Path,
     ocr_fn: Optional[Callable[[Path], str]] = None,
+    vlm_fn: Optional[Callable[[Path], str]] = None,
 ) -> list[dict]:
     """
     Returns list of dicts: file_path (relative to data dir or absolute), page, caption_text, ocr_text
@@ -159,8 +160,14 @@ def extract_figures(
                             ocr_text = ocr_fn(fpath) or ""
                         except Exception:
                             ocr_text = ""
+                    vlm_text = ""
+                    if vlm_fn:
+                        try:
+                            vlm_text = (vlm_fn(fpath) or "").strip()[:4000]
+                        except Exception:
+                            vlm_text = ""
                     index_text = " ".join(
-                        filter(None, [caption, ocr_text])
+                        filter(None, [caption, ocr_text, vlm_text])
                     ).strip() or f"Figure on page {page_num}"
                     out.append(
                         {
@@ -169,6 +176,7 @@ def extract_figures(
                             "caption_text": caption,
                             "ocr_text": ocr_text,
                             "index_text": index_text,
+                            "description": vlm_text or None,
                         }
                     )
     finally:
@@ -176,11 +184,7 @@ def extract_figures(
     return out
 
 
-def ingest_pdf(
-    pdf_path: Path,
-    settings: Settings,
-) -> list[tuple[str, int, int, int]]:
-    """Returns text chunks as (text, page_start, page_end, chunk_index)."""
+def _native_pdf_text_offsets(pdf_path: Path) -> tuple[str, list[tuple[int, int, int]]]:
     doc = fitz.open(pdf_path)
     try:
         parts: list[str] = []
@@ -198,11 +202,78 @@ def ingest_pdf(
                 pos += len(text)
             end = pos
             page_offsets.append((start, end, i + 1))
-        full = "".join(parts)
+        return "".join(parts), page_offsets
     finally:
         doc.close()
 
-    return chunk_text(full, page_offsets, settings.chunk_size, settings.chunk_overlap)
+
+def _ocr_pdf_text_offsets(pdf_path: Path, settings: Settings) -> tuple[str, list[tuple[int, int, int]]]:
+    try:
+        import io
+
+        import pytesseract
+        from PIL import Image
+    except Exception:
+        return "", []
+
+    doc = fitz.open(pdf_path)
+    try:
+        mat = fitz.Matrix(settings.pdf_ocr_dpi_scale, settings.pdf_ocr_dpi_scale)
+        parts: list[str] = []
+        page_offsets: list[tuple[int, int, int]] = []
+        pos = 0
+        n = min(len(doc), max(1, settings.pdf_ocr_max_pages))
+        for i in range(n):
+            page = doc[i]
+            try:
+                pix = page.get_pixmap(matrix=mat, alpha=False)
+            except Exception:
+                continue
+            try:
+                img = Image.open(io.BytesIO(pix.tobytes("png")))
+                text = (pytesseract.image_to_string(img) or "").strip()
+            except Exception:
+                text = ""
+            block = (text + "\n\n") if text else ""
+            start = pos
+            parts.append(block)
+            pos += len(block)
+            end = pos
+            page_offsets.append((start, end, i + 1))
+        return "".join(parts), page_offsets
+    finally:
+        doc.close()
+
+
+def ingest_pdf(
+    pdf_path: Path,
+    settings: Settings,
+    *,
+    prefer_page_ocr: bool = False,
+) -> list[tuple[str, int, int, int]]:
+    """
+    Returns text chunks as (text, page_start, page_end, chunk_index).
+    If prefer_page_ocr and PDF_OCR_PAGES_ENABLED, tries full-page Tesseract OCR first
+    when the PDF is classified scan-heavy / low-text upstream; falls back to native text.
+    """
+    native_full, native_off = _native_pdf_text_offsets(pdf_path)
+    native_chunks = (
+        chunk_text(native_full, native_off, settings.chunk_size, settings.chunk_overlap)
+        if native_full.strip()
+        else []
+    )
+
+    if prefer_page_ocr and settings.pdf_ocr_pages_enabled:
+        ocr_full, ocr_off = _ocr_pdf_text_offsets(pdf_path, settings)
+        ocr_chunks = (
+            chunk_text(ocr_full, ocr_off, settings.chunk_size, settings.chunk_overlap)
+            if ocr_full.strip()
+            else []
+        )
+        if ocr_chunks:
+            return ocr_chunks
+
+    return native_chunks
 
 
 def ingest_pdf_with_figures(
@@ -211,8 +282,13 @@ def ingest_pdf_with_figures(
     data_dir: Path,
     settings: Settings,
     ocr_fn: Optional[Callable[[Path], str]] = None,
+    *,
+    prefer_page_ocr: bool = False,
+    vlm_fn: Optional[Callable[[Path], str]] = None,
 ) -> tuple[list[tuple[str, int, int, int]], list[dict]]:
     assets_dir = data_dir / "assets" / document_id
-    chunks = ingest_pdf(pdf_path, settings)
-    figures = extract_figures(pdf_path, document_id, assets_dir, ocr_fn=ocr_fn)
+    chunks = ingest_pdf(pdf_path, settings, prefer_page_ocr=prefer_page_ocr)
+    figures = extract_figures(
+        pdf_path, document_id, assets_dir, ocr_fn=ocr_fn, vlm_fn=vlm_fn
+    )
     return chunks, figures

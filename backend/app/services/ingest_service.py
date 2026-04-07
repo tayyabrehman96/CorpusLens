@@ -18,6 +18,7 @@ from app.database import (
 )
 from app.ingest.pdf import ingest_pdf_with_figures
 from app.ingest.pdf_profile import analyze_pdf_profile, dumps_profile, profile_image_upload
+from app.ingest.vlm_caption import ollama_vision_caption
 from app.retrieve.vector_store import VectorStore
 from app.services.library_wipe import clear_entire_library
 
@@ -75,8 +76,26 @@ def _ingest_physical_file(
     db_path: Path,
 ) -> None:
     if mime == "application/pdf" or original_filename.lower().endswith(".pdf"):
+        prof = analyze_pdf_profile(stored)
+        pdf_kind = prof.get("pdf_kind") or ""
+        prefer_ocr = settings.pdf_ocr_pages_enabled and pdf_kind in (
+            "scanned_or_image_heavy",
+            "low_text_mixed",
+            "empty",
+        )
+        vlm_fn = (
+            (lambda p: ollama_vision_caption(p, settings))
+            if (settings.ollama_vision_model or "").strip()
+            else None
+        )
         chunks_tuples, figures = ingest_pdf_with_figures(
-            stored, doc_id, settings.data_dir, settings, ocr_fn=_try_ocr
+            stored,
+            doc_id,
+            settings.data_dir,
+            settings,
+            ocr_fn=_try_ocr,
+            prefer_page_ocr=prefer_ocr,
+            vlm_fn=vlm_fn,
         )
         chunk_rows = [(t, ps, pe, ix) for t, ps, pe, ix in chunks_tuples]
         chunk_ids = insert_chunks(db_path, doc_id, chunk_rows)
@@ -103,7 +122,7 @@ def _ingest_physical_file(
                 fig["page"],
                 fig.get("caption_text"),
                 fig.get("ocr_text"),
-                None,
+                fig.get("description"),
             )
             idx_text = fig.get("index_text") or fig.get("caption_text") or ""
             store.upsert_figures(
