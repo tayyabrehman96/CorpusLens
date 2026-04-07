@@ -1,0 +1,30 @@
+# Data & local state
+backend/data/
+*.db
+*.sqlite3
+chroma_db/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.local
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+npm-debug.log*
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs & misc
+*.log
+.pytest_cache/
+.mypy_cache/
