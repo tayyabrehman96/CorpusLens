@@ -6,6 +6,27 @@ Repository: **[github.com/tayyabrehman96/CorpusLens](https://github.com/tayyabre
 
 ---
 
+## About
+
+**CorpusLens** helps researchers, students, and teams **query their own PDFs and images** using **retrieval-augmented generation** that runs **on your hardware**. Documents are chunked, indexed with **hybrid search** (keyword + embeddings), and answers stream back with **citations** and an **evidence** view so you can verify claims against the source files. It is designed for **privacy** (no required cloud document upload), **hackability** (clear API + local data folder), and **honest limits** (quality depends on your PDFs, retrieval settings, and local LLM choice).
+
+---
+
+## Topics & stack
+
+| Topic | Notes |
+|-------|--------|
+| **Languages** | Python (API, ingest, RAG), TypeScript (UI) |
+| **Retrieval** | BM25, dense vectors, Chroma, reciprocal rank fusion |
+| **Models** | sentence-transformers (`bge-small-en-v1.5` default), Hugging Face or Ollama LLMs |
+| **Documents** | PyMuPDF, optional Tesseract OCR on figures |
+| **UI** | Next.js 15, Tailwind, React Markdown + GFM |
+
+**Suggested GitHub topics** (add under repository **About → Topics**):  
+`rag` `retrieval-augmented-generation` `llm` `local-llm` `ollama` `huggingface` `fastapi` `nextjs` `typescript` `python` `chromadb` `sentence-transformers` `bm25` `pdf` `ocr` `privacy` `open-source` `research-tools` `semantic-search` `hybrid-search`
+
+---
+
 ## What it is
 
 | Aspect | Description |
@@ -173,6 +194,12 @@ Issues and PRs are welcome: retrieval tuning, UI, deployment guides, or optional
 ## Acknowledgements
 
 Built with **FastAPI**, **Next.js**, **Chroma**, **sentence-transformers**, **PyMuPDF**, and the broader open-source ML ecosystem.
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE).
 
 ---
 
