@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  apiBaseDisplayLabel,
   apiUrl,
   deleteDocument,
   EvidenceChunk,
@@ -294,14 +295,14 @@ export default function Dashboard() {
 
   return (
     <div className="relative min-h-screen bg-grid-faint bg-grid">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_55%_45%_at_50%_120%,rgba(45,212,191,0.06),transparent)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_55%_45%_at_50%_120%,rgba(37,99,235,0.06),transparent)]" />
 
       <div className="relative mx-auto max-w-[1720px] px-4 pb-16 pt-10 sm:px-6 lg:px-10">
         <header className="mb-10 flex flex-col gap-6 border-b border-line pb-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-dim to-brand shadow-glow">
-                <span className="font-display text-lg text-zinc-950">C</span>
+                <span className="font-display text-lg text-white">C</span>
               </div>
               <div>
                 <p className="cl-label text-brand-muted">CorpusLens</p>
@@ -314,7 +315,7 @@ export default function Dashboard() {
               Hybrid retrieval over your PDFs and images — grounded answers, Markdown tables, and citations.
               Configure <code className="rounded-md border border-line bg-surface-raised px-1.5 py-0.5 font-mono text-xs text-brand-muted">NEXT_PUBLIC_API_URL</code> in{" "}
               <code className="rounded-md border border-line bg-surface-raised px-1.5 py-0.5 font-mono text-xs text-brand-muted">.env.local</code> if the API is not on{" "}
-              <span className="font-mono text-ink-faint">127.0.0.1:8000</span>.
+              <span className="font-mono text-ink-faint">{apiBaseDisplayLabel()}</span>.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -414,7 +415,7 @@ export default function Dashboard() {
                         key={d.id}
                         className={`group flex gap-3 rounded-xl border p-3 transition ${
                           selected[d.id]
-                            ? "border-brand/35 bg-brand/5 shadow-[0_0_0_1px_rgba(45,212,191,0.12)]"
+                            ? "border-brand/40 bg-blue-50/80 shadow-[0_0_0_1px_rgba(37,99,235,0.15)]"
                             : "border-line bg-surface-raised/40 hover:border-lineStrong hover:bg-surface-hover/60"
                         }`}
                       >
@@ -433,7 +434,7 @@ export default function Dashboard() {
                             <span className="text-ink-faint"> · </span>
                             {(d.asset_count ?? 0)} asset{(d.asset_count ?? 0) === 1 ? "" : "s"}
                             {(d.chunk_count ?? 0) === 0 && (d.asset_count ?? 0) === 0 ? (
-                              <span className="ml-1 text-amber-400/90">· not searchable</span>
+                              <span className="ml-1 text-amber-700">· not searchable</span>
                             ) : null}
                           </p>
                           {profileBadge(d.ingest_profile) && (
@@ -458,7 +459,7 @@ export default function Dashboard() {
                             <button
                               type="button"
                               onClick={() => onDelete(d.id)}
-                              className="text-xs font-medium text-red-400/90 hover:text-red-300"
+                              className="text-xs font-medium text-red-600 hover:text-red-700"
                             >
                               Remove
                             </button>
@@ -490,12 +491,12 @@ export default function Dashboard() {
           <main className="flex min-h-0 flex-col gap-5">
             {!loadingDocs && !indexReady && (
               <div
-                className="cl-panel-solid border-amber-500/20 bg-amber-500/[0.07] px-5 py-4 text-sm text-amber-100"
+                className="cl-panel-solid border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950"
                 role="status"
               >
-                <p className="font-semibold text-amber-50">Nothing searchable yet</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-amber-100/85">
-                  Upload a real PDF (header <code className="rounded bg-black/25 px-1 font-mono text-[11px]">%PDF</code>)
+                <p className="font-semibold text-amber-900">Nothing searchable yet</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-amber-900/90">
+                  Upload a real PDF (header <code className="rounded bg-amber-100 px-1 font-mono text-[11px] text-amber-950">%PDF</code>)
                   or an image. Failed uploads surface as errors instead of ghost rows. You should see chunk counts on
                   each library card when indexing succeeds.
                 </p>
@@ -524,7 +525,7 @@ export default function Dashboard() {
                     className="cl-select mt-2"
                   >
                     {MODES.map((m) => (
-                      <option key={m.id} value={m.id} className="bg-zinc-900">
+                      <option key={m.id} value={m.id} className="bg-white text-slate-900">
                         {m.label}
                       </option>
                     ))}
@@ -551,13 +552,13 @@ export default function Dashboard() {
                     onChange={(e) => setDetailLevel(e.target.value as DetailLevel)}
                     className="cl-select mt-2"
                   >
-                    <option value="concise" className="bg-zinc-900">
+                    <option value="concise" className="bg-white text-slate-900">
                       Concise
                     </option>
-                    <option value="balanced" className="bg-zinc-900">
+                    <option value="balanced" className="bg-white text-slate-900">
                       Balanced
                     </option>
-                    <option value="deep" className="bg-zinc-900">
+                    <option value="deep" className="bg-white text-slate-900">
                       Deep · tables
                     </option>
                   </select>
@@ -579,8 +580,8 @@ export default function Dashboard() {
               </div>
 
               {scopeIds != null && scopeIds.length > 0 ? (
-                <p className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-xs text-amber-100/95">
-                  <span className="font-semibold text-amber-50">Scoped:</span> only{" "}
+                <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-950">
+                  <span className="font-semibold text-amber-900">Scoped:</span> only{" "}
                   {scopeIds.length === 1 ? "one checked source" : `${scopeIds.length} checked sources`}. Empty answers?
                   Clear checkboxes in the library.
                 </p>
@@ -613,7 +614,7 @@ export default function Dashboard() {
                 >
                   {streaming ? (
                     <span className="inline-flex items-center gap-2">
-                      <span className="h-2 w-2 animate-pulseSoft rounded-full bg-zinc-950/40" />
+                      <span className="h-2 w-2 animate-pulseSoft rounded-full bg-white/80" />
                       Generating…
                     </span>
                   ) : (
@@ -630,7 +631,7 @@ export default function Dashboard() {
                 </button>
               </div>
               {error && (
-                <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                   {error}
                 </p>
               )}
@@ -639,7 +640,7 @@ export default function Dashboard() {
             <div className="cl-panel flex min-h-[280px] flex-1 flex-col p-5 lg:p-6">
               <p className="cl-label">Synthesis</p>
               <h2 className="mt-1 text-lg font-semibold text-ink">Answer</h2>
-              <div className="answer-md cl-scrollbar prose prose-sm prose-invert prose-zinc mt-4 max-w-none flex-1 overflow-y-auto pb-2 prose-headings:scroll-mt-4 prose-headings:font-semibold prose-a:text-brand-muted prose-code:rounded-md prose-code:border prose-code:border-line prose-code:bg-surface-raised prose-code:px-1 prose-code:text-brand-muted prose-pre:bg-surface-solid prose-th:border prose-th:border-line prose-td:border prose-td:border-line prose-table:text-sm">
+              <div className="answer-md cl-scrollbar prose prose-sm prose-slate mt-4 max-w-none flex-1 overflow-y-auto pb-2 prose-headings:scroll-mt-4 prose-headings:font-semibold prose-headings:text-slate-900 prose-p:text-slate-700 prose-li:text-slate-700 prose-strong:text-slate-900 prose-a:text-brand prose-code:rounded-md prose-code:border prose-code:border-line prose-code:bg-slate-100 prose-code:px-1 prose-code:text-slate-800 prose-pre:bg-slate-100 prose-pre:text-slate-800 prose-th:border prose-th:border-line prose-td:border prose-td:border-line prose-table:text-sm">
                 {answer ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
                 ) : (

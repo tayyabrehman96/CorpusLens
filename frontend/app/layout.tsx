@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${jakarta.variable} ${instrument.variable} ${jetbrains.variable} min-h-screen bg-canvas font-sans text-ink antialiased`}
+        className={`${jakarta.variable} ${instrument.variable} ${jetbrains.variable} min-h-screen bg-canvas font-sans text-slate-900 antialiased`}
       >
         {children}
       </body>

@@ -228,7 +228,7 @@ CorpusLens/
 
 ## 6. Security & deployment notes
 
-- **No built-in auth**: bind API to `127.0.0.1` for local use; put a reverse proxy + auth in front for network exposure.
+- **No built-in auth**: bind API to `localhost` / `127.0.0.1` for same-machine use, or `0.0.0.0` on a trusted LAN with CORS locked down; put a reverse proxy + auth in front for wider exposure.
 - **Secrets**: `.env` / `.env.local` must not be committed; use `.env.example` only as templates.
 - **CORS**: restrict `CORS_ORIGINS` to known front-end origins in production.
 

@@ -1,6 +1,17 @@
+const DEFAULT_API_BASE = "http://localhost:8000";
+
 export const API_BASE =
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) ||
-  "http://127.0.0.1:8000";
+  DEFAULT_API_BASE;
+
+/** Host:port derived from `API_BASE` for help text (e.g. `localhost:8000`). */
+export function apiBaseDisplayLabel(): string {
+  try {
+    return new URL(API_BASE).host;
+  } catch {
+    return API_BASE.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+}
 
 export function apiUrl(path: string): string {
   const p = path.startsWith("/") ? path : `/${path}`;

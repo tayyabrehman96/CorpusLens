@@ -64,8 +64,10 @@ Repository: **[github.com/tayyabrehman96/CorpusLens](https://github.com/tayyabre
    .\.venv\Scripts\pip install -r requirements.txt
    copy .env.example .env
    # Edit .env: LLM_BACKEND (hf_local | ollama), models, CORS if needed
-   .\.venv\Scripts\uvicorn.exe app.main:app --reload --host 127.0.0.1 --port 8000
+   .\.venv\Scripts\uvicorn.exe app.main:app --reload --host localhost --port 8000
    ```
+
+   To reach the API from **another device** on your network, use `--host 0.0.0.0 --port 8000`, add that machine’s IP to `CORS_ORIGINS` in `backend/.env`, and set `NEXT_PUBLIC_API_URL` in `frontend/.env.local` to `http://<that-ip>:8000`.
 
 2. **Frontend**:
 
@@ -76,7 +78,7 @@ Repository: **[github.com/tayyabrehman96/CorpusLens](https://github.com/tayyabre
    npm run dev
    ```
 
-3. Open **[http://localhost:3000](http://localhost:3000)**. If the API is not on `http://127.0.0.1:8000`, set `NEXT_PUBLIC_API_URL` in `frontend/.env.local`.
+3. Open **[http://localhost:3000](http://localhost:3000)**. The UI defaults to `http://localhost:8000` for the API; override with `NEXT_PUBLIC_API_URL` in `frontend/.env.local` if you use another host or port.
 
 4. **Workflow**: Upload files → wait until **chunk counts** appear on library cards → enter a question → **Run query** → read the streamed answer and **evidence** panels. Leave checkboxes **off** to search the whole library; tick files to **restrict scope**.
 
@@ -90,7 +92,7 @@ Repository: **[github.com/tayyabrehman96/CorpusLens](https://github.com/tayyabre
 4. **Query** → user message retrieves top‑k chunks (and optionally figures), then the **LLM** generates an answer **only from that context** (prompt enforces citations).  
 5. **Stream** → tokens returned over SSE; final event includes **evidence** payloads for the UI.
 
-`localhost` / `127.0.0.1` in this repo are **defaults for local development** only; change hosts/ports in `.env` and `.env.local` if you deploy elsewhere.
+Default URLs use **`localhost`** for readability; **`127.0.0.1`** is equivalent for loopback. For LAN access, bind the API with `--host 0.0.0.0`, point the frontend at `http://<server-ip>:8000`, and align **`CORS_ORIGINS`**, **`NEXT_PUBLIC_API_URL`**, and optional **`API_PUBLIC_URL`** (Markdown export figure links).
 
 ---
 
@@ -154,8 +156,9 @@ See **`backend/.env.example`** for the full list. Commonly tuned:
 | `PDF_OCR_*` | Full-page Tesseract OCR for weak PDF text layers |
 | `OLLAMA_VISION_MODEL` | Optional vision tag for **figure captions** at ingest (Ollama must support images) |
 | `CORS_ORIGINS` | Frontend origins (e.g. `http://localhost:3000`) |
+| `API_PUBLIC_URL` | Optional base URL of this API for **absolute** figure links in exported Markdown |
 
-Frontend: **`frontend/.env.local.example`** — use `NEXT_PUBLIC_API_URL` if the API base URL changes.
+Frontend: **`frontend/.env.local.example`** — set `NEXT_PUBLIC_API_URL` to wherever the browser must call the API (default `http://localhost:8000`).
 
 ---
 
@@ -177,6 +180,7 @@ Exposes Ollama on **11434**. Set `OLLAMA_BASE_URL` accordingly; run FastAPI and 
 | **Upload rejected** | PDF must start with **`%PDF`**; empty files are rejected; unusable PDFs are rolled back (no ghost rows). |
 | **Ollama errors** | CorpusLens uses **`POST /api/generate`** (not `/api/chat`). Check `GET /api/chat/health/llm`. |
 | **CORS** | Add your frontend origin to `CORS_ORIGINS` in `backend/.env`. |
+| **UI looks broken** (plain HTML, default fonts, gray buttons) | Next dev served a **404** for `/_next/static/css/app/layout.css` (stale `.next`). Stop the dev server, then from `frontend` run **`npm run dev:fresh`** (or delete the `frontend/.next` folder and run **`npm run dev`** again). Hard-refresh the browser (**Ctrl+Shift+R**). |
 | **Stale Chroma** | After abnormal shutdowns, if retrieval is inconsistent, try **reset library** and re-ingest. |
 
 ---

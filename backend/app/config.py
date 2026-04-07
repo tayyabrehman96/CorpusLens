@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     # LLM_BACKEND=ollama (HTTP to Ollama) or hf_local (Hugging Face model under data/hf_hub).
     llm_backend: str = "hf_local"
     # Local Ollama default for this app only (override with OLLAMA_BASE_URL).
-    ollama_base_url: str = "http://127.0.0.1:11434"
+    ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:3b"
     # Hugging Face model id or absolute path to a folder with config.json (first run downloads into data/hf_hub).
     hf_local_model: str = "Qwen/Qwen2.5-0.5B-Instruct"
