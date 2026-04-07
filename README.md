@@ -4,6 +4,8 @@
 
 Repository: **[github.com/tayyabrehman96/CorpusLens](https://github.com/tayyabrehman96/CorpusLens)**
 
+**Architecture (detailed)**: see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — directory map, data flow, modules, Mermaid diagram, and extension points.
+
 ---
 
 ## About
